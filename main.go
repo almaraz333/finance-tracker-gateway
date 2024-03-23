@@ -20,6 +20,7 @@ type Expenst struct {
 }
 
 func createExpense(w http.ResponseWriter, r *http.Request, c pb.ExpenseClient) {
+
 	var expense = Expenst{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -55,7 +56,7 @@ func main() {
 
 	fmt.Printf("listening on port: %v \n", PORT)
 
-	conn, err := grpc.Dial("127.0.0.1:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("expense-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	c := pb.NewExpenseClient(conn)
 
@@ -69,7 +70,7 @@ func main() {
 		createExpense(w, r, c)
 	})
 
-	if err := http.ListenAndServe("127.0.0.1:"+fmt.Sprint(PORT), mux); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:"+fmt.Sprint(PORT), mux); err != nil {
 		log.Fatal(err.Error())
 	}
 
