@@ -32,7 +32,7 @@ To get the entire system up and running, you'll need to clone the necessary repo
     ```
 
 2. **Docker Compose**:
-    Navigate to the root directory where you've cloned the repositories and place the Docker Compose file provided in the gateway repository.
+    Navigate to the root directory where you've cloned the repositories, rename the file `docker-compose.example.yaml` to `docker-compose.yaml`, and place the Docker Compose file provided in the gateway repository.
 
     Run the following command to start the services:
 
