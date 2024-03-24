@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  expense-service:
+    build:
+      context: ./expense-service
+      dockerfile: Dockerfile
+    ports:
+      - "50051:50051"
+  gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+
