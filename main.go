@@ -13,15 +13,43 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type Expenst struct {
+type Expense struct {
 	Category  string
 	Amount    float64
 	CreatedAt time.Time
+	Id        int32
+}
+
+func getExpenses(w http.ResponseWriter, _ *http.Request, c pb.ExpenseClient) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	res, err := c.GetExpenses(ctx, nil)
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	resBytes, jsonErr := json.Marshal(res)
+
+	if jsonErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid request"))
+		fmt.Println(err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, writeErr := w.Write(resBytes)
+
+	if writeErr != nil {
+		log.Printf("Failed to write response: %v\n", writeErr)
+	}
 }
 
 func createExpense(w http.ResponseWriter, r *http.Request, c pb.ExpenseClient) {
-
-	var expense = Expenst{}
+	var expense = Expense{}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
@@ -68,6 +96,10 @@ func main() {
 
 	mux.HandleFunc("POST /api/expenses", func(w http.ResponseWriter, r *http.Request) {
 		createExpense(w, r, c)
+	})
+
+	mux.HandleFunc("GET /api/expenses", func(w http.ResponseWriter, r *http.Request) {
+		getExpenses(w, r, c)
 	})
 
 	if err := http.ListenAndServe("0.0.0.0:"+fmt.Sprint(PORT), mux); err != nil {
