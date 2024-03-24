@@ -31,20 +31,13 @@ To get the entire system up and running, you'll need to clone the necessary repo
     git clone https://github.com/almaraz333/finance-tracker-expense-service.git
     ```
 
-2. **Clone the Proto Files Repository**:
-    The proto files are separately maintained to ensure consistency across services. Clone this repository as well.
-
-    ```bash
-    git clone https://github.com/almaraz333/finance-tracker-proto-files.git
-    ```
-
-3. **Docker Compose**:
+2. **Docker Compose**:
     Navigate to the root directory where you've cloned the repositories and place the Docker Compose file provided in the gateway repository.
 
     Run the following command to start the services:
 
     ```bash
-    docker-compose up -d
+    docker-compose up --build
     ```
 
 ## Usage
