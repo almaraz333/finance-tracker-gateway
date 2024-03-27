@@ -46,6 +46,8 @@ The Finance Tracker Gateway exposes an API for interacting with the Expense serv
 
 - `GET /api/expenses`: Retrieves a list of all expenses.
 - `POST /api/expenses`: Creates a new expense. The request body must include a `category` (string) and an `amount` (float). The service will automatically assign an `id` and a `created_at` timestamp.
+- `PUT /api/expenses/`: Updates an existing expense. The request body must include a `category` (string), an `amount` (float), and the `id` (int32).
+- `DELETE /api/expenses/`: Deletes an existing expense. The request body must include the `id` (int32) of the expense to delete.
 
 ### Example: Creating an Expense
 
