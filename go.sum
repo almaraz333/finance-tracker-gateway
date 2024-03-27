@@ -1,5 +1,5 @@
-github.com/almaraz333/finance-tracker-proto-files v0.1.5 h1:dhF8TZfNd9JMBB7Z+rgXdybOyvVBIb3IHX5a2LZfmjM=
-github.com/almaraz333/finance-tracker-proto-files v0.1.5/go.mod h1:IONdYHIXOauegRvFVynEcy56crTik26Y39JcT6iM8x0=
+github.com/almaraz333/finance-tracker-proto-files v0.1.10 h1:jtRftjpd3c1RCVl0R0R162XuyLRLmD2Dbf69hlVsFV8=
+github.com/almaraz333/finance-tracker-proto-files v0.1.10/go.mod h1:IONdYHIXOauegRvFVynEcy56crTik26Y39JcT6iM8x0=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/golang/protobuf v1.5.3 h1:KhyjKVUg7Usr/dYsdSqoFveMYd5ko72D+zANwlG1mmg=
 github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=

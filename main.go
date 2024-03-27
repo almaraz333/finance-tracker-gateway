@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	pb "github.com/almaraz333/finance-tracker-proto-files/expense"
@@ -18,6 +19,35 @@ type Expense struct {
 	Amount    float64
 	CreatedAt time.Time
 	Id        int32
+}
+
+func delteExpense(w http.ResponseWriter, r *http.Request, c pb.ExpenseClient) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	id := r.PathValue("id")
+	idInt, idErr := strconv.ParseInt(id, 10, 32)
+
+	_, err := c.DeleteExpense(ctx, &pb.DeleteExpenseRequest{
+		Id: int32(idInt),
+	})
+
+	if idErr != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid request, could not parse id"))
+		fmt.Println(err.Error())
+		return
+	}
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid request"))
+		fmt.Println(err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Deleted Expense with the id: " + id))
 }
 
 func getExpenses(w http.ResponseWriter, _ *http.Request, c pb.ExpenseClient) {
@@ -77,6 +107,35 @@ func createExpense(w http.ResponseWriter, r *http.Request, c pb.ExpenseClient) {
 	log.Printf("Created Expense with the amount: %v", res.GetAmount())
 }
 
+func updateExpense(w http.ResponseWriter, r *http.Request, c pb.ExpenseClient) {
+	var expense = Expense{}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	err := json.NewDecoder(r.Body).Decode(&expense)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid request"))
+		fmt.Println(err.Error())
+		return
+	}
+
+	res, err := c.UpdateExpense(ctx, &pb.UpdateExpenseRequest{
+		Category: expense.Category,
+		Amount:   expense.Amount,
+		Id:       expense.Id,
+	})
+
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
+
+	log.Printf("Updated Expense with id: %v", res.Id)
+}
+
 func main() {
 	PORT := 8080
 
@@ -100,6 +159,14 @@ func main() {
 
 	mux.HandleFunc("GET /api/expenses", func(w http.ResponseWriter, r *http.Request) {
 		getExpenses(w, r, c)
+	})
+
+	mux.HandleFunc("DELETE /api/expenses/{id}", func(w http.ResponseWriter, r *http.Request) {
+		delteExpense(w, r, c)
+	})
+
+	mux.HandleFunc("PUT /api/expenses", func(w http.ResponseWriter, r *http.Request) {
+		updateExpense(w, r, c)
 	})
 
 	if err := http.ListenAndServe("0.0.0.0:"+fmt.Sprint(PORT), mux); err != nil {

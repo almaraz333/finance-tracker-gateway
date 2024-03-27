@@ -3,7 +3,7 @@ module github.com/almaraz333/finance-tracker-gateway
 go 1.22.1
 
 require (
-	github.com/almaraz333/finance-tracker-proto-files v0.1.5
+	github.com/almaraz333/finance-tracker-proto-files v0.1.10
 	google.golang.org/grpc v1.62.1
 )
 
