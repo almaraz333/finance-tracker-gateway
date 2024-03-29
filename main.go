@@ -22,11 +22,13 @@ type Expense struct {
 	Id        int32
 }
 
+const clientKey int = iota
+
 func delteExpense(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c, ok := r.Context().Value("context").(pb.ExpenseClient)
+	c, ok := r.Context().Value(clientKey).(pb.ExpenseClient)
 
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
@@ -63,7 +65,7 @@ func getExpenses(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c, ok := r.Context().Value("context").(pb.ExpenseClient)
+	c, ok := r.Context().Value(clientKey).(pb.ExpenseClient)
 
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
@@ -102,11 +104,11 @@ func getExpenses(w http.ResponseWriter, r *http.Request) {
 func createExpense(w http.ResponseWriter, r *http.Request) {
 	var expense = Expense{}
 
-	c, ok := r.Context().Value("context").(pb.ExpenseClient)
+	c, ok := r.Context().Value(clientKey).(pb.ExpenseClient)
 
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request"))
+		w.Write([]byte("Invalid request - reading context"))
 		return
 	}
 
@@ -118,7 +120,7 @@ func createExpense(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request"))
+		w.Write([]byte("Invalid request - parsing JSON"))
 		return
 	}
 
@@ -130,7 +132,8 @@ func createExpense(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request"))
+		w.Write([]byte("Invalid request - service"))
+		fmt.Println(err.Error())
 		return
 	}
 
@@ -138,7 +141,7 @@ func createExpense(w http.ResponseWriter, r *http.Request) {
 
 	if jsonErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request"))
+		w.Write([]byte("Invalid request - parsing JSON for res"))
 		return
 	}
 
@@ -156,7 +159,7 @@ func createExpense(w http.ResponseWriter, r *http.Request) {
 func updateExpense(w http.ResponseWriter, r *http.Request) {
 	var expense = Expense{}
 
-	c, ok := r.Context().Value("context").(pb.ExpenseClient)
+	c, ok := r.Context().Value(clientKey).(pb.ExpenseClient)
 
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
@@ -209,14 +212,15 @@ func updateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Logging(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
+func Logging(w http.ResponseWriter, r *http.Request) {
+	slog.Info("", r.Method, r.URL.Path)
 }
 
-const clientKey int = iota
+func MiddlewareChain(w http.ResponseWriter, r *http.Request, middleware ...func(w http.ResponseWriter, r *http.Request)) {
+	for _, mw := range middleware {
+		mw(w, r)
+	}
+}
 
 func main() {
 	PORT := 8080
@@ -235,29 +239,33 @@ func main() {
 
 	defer conn.Close()
 
-	mux.HandleFunc("POST /api/expenses", Logging(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /api/expenses", func(w http.ResponseWriter, r *http.Request) {
 		newCtx := context.WithValue(r.Context(), clientKey, c)
 		r = r.WithContext(newCtx)
-		createExpense(w, r)
-	}))
 
-	mux.HandleFunc("GET /api/expenses", Logging(func(w http.ResponseWriter, r *http.Request) {
-		newCtx := context.WithValue(r.Context(), clientKey, c)
-		r = r.WithContext(newCtx)
-		getExpenses(w, r)
-	}))
+		MiddlewareChain(w, r, Logging, createExpense)
+	})
 
-	mux.HandleFunc("DELETE /api/expenses/{id}", Logging(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /api/expenses", func(w http.ResponseWriter, r *http.Request) {
 		newCtx := context.WithValue(r.Context(), clientKey, c)
 		r = r.WithContext(newCtx)
-		delteExpense(w, r)
-	}))
 
-	mux.HandleFunc("PUT /api/expenses", Logging(func(w http.ResponseWriter, r *http.Request) {
+		MiddlewareChain(w, r, Logging, getExpenses)
+	})
+
+	mux.HandleFunc("DELETE /api/expenses/{id}", func(w http.ResponseWriter, r *http.Request) {
 		newCtx := context.WithValue(r.Context(), clientKey, c)
 		r = r.WithContext(newCtx)
-		updateExpense(w, r)
-	}))
+
+		MiddlewareChain(w, r, Logging, delteExpense)
+	})
+
+	mux.HandleFunc("PUT /api/expenses", func(w http.ResponseWriter, r *http.Request) {
+		newCtx := context.WithValue(r.Context(), clientKey, c)
+		r = r.WithContext(newCtx)
+
+		MiddlewareChain(w, r, Logging, updateExpense)
+	})
 
 	if err := http.ListenAndServe("0.0.0.0:"+fmt.Sprint(PORT), mux); err != nil {
 		log.Fatal(err.Error())
